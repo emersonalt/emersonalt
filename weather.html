@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
+    <title>Weather</title>
+    <style>
+        /* body {
+            background-image: url('https://images.stockcake.com/public/0/7/9/0796bd2f-b458-4d4a-b923-19fcd6d22146_large/stormy-rainy-sky-stockcake.jpg');
+            background-size: 100%;
+            background-repeat: no-repeat;
+        } */
+        .weather-card {
+            width: 60%;
+            text-align: center;
+            padding-bottom: 20px;
+            padding-top: 20px;
+            margin-top: 5%;
+            opacity: 80%;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background-color: white;
+        }
+    </style> 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-primary d-flex justify-content-center">
+    <div class="weather-card">
+        <h3>Weather Info</h3>
+        <p id="txtLocation">Detecting location...</p>
+        <p id="txtTemp">Loading temperature...</p>
+        <p id="txtHumidity">Loading humidity...</p>
+        <p id="txtCondition">Loading conditions...</p>
+        <div class="container text-center">
+          <div class="row">
+              <div class="col"><p id="hour0" class="mb-0"></p><i id="icon0"></i><p id="hourTemp0">--°F</p></div>
+              <!-- Forecasted Hours -->
+              <div class="col"><p id="hour1" class="mb-0"></p><i id="icon1"></i><p id="hourTemp1">--°F</p></div>
+              <div class="col"><p id="hour2" class="mb-0"></p><i id="icon2"></i><p id="hourTemp2">--°F</p></div>
+              <div class="col"><p id="hour3" class="mb-0"></p><i id="icon3"></i><p id="hourTemp3">--°F</p></div>
+              <div class="col"><p id="hour4" class="mb-0"></p><i id="icon4"></i><p id="hourTemp4">--°F</p></div>
+              <div class="col"><p id="hour5" class="mb-0"></p><i id="icon5"></i><p id="hourTemp5">--°F</p></div>
+          </div>
+      </div>
+      <p class="mt-5">All data is courtesy of <a href="https://open-meteo.com/">Open Meteo</a></p>
+    </div>
+    
+    <!-- <div class="d-flex justify-content-center bg-white" style="margin-top: 8%">
+        <form class="">
+            <h1>the</h1>
+        </form>
+    </div>
+    <div>
+        <p id="txtTemp">Loading...</p>
+        <p id="txtHumidity">Loading...</p> -->
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      function getUserLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            position => {
+              const strLat = position.coords.latitude
+              const strLon = position.coords.longitude
+              document.querySelector("#txtLocation").innerText = `Latitude: ${strLat.toFixed(2)}, Longitude: ${strLon.toFixed(2)}`
+              getWeather(strLat, strLon)
+            },
+            error => {
+              console.error("Error getting location:", error)
+              document.querySelector("#txtLocation").innerText = "Location access denied."
+              getWeather(36.1628, -85.5016)
+            }
+          )
+        } else {
+          console.error("Geolocation not supported.")
+          document.querySelector("#txtLocation").innerText = "Geolocation not supported."
+          getWeather(36.1628, -85.5016)
+        }
+      }
+
+      async function getWeather(strLat, strLon) {
+        const nowUTC = new Date().getUTCHours()
+        const nowLocal = new Date().getHours()
+        const strBaseURL = `https://api.open-meteo.com/v1/forecast?latitude=36.1628&longitude=-85.5016&current=temperature_2m,relative_humidity_2m,weather_code&hourly=temperature_2m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=America%2FChicago`
+
+        try {
+          const objResponse = await fetch(strBaseURL)
+
+          if (!objResponse.ok) {
+            throw new Error(`HTTP Error Status: ${objResponse.status}`)
+          }
+          
+          const data = await objResponse.json()
+
+          const strTemp = data.current.temperature_2m
+          const strHumidity = data.current.relative_humidity_2m
+          const strHourlyTemps = data.hourly.temperature_2m
+          const strWC = data.hourly.weather_code
+          
+          
+          let strCurrentTemp = document.querySelectorAll(".txtTemp")
+          strCurrentTemp.forEach(i => {
+            i.innerText = `${strTemp}°F`
+          })
+          let i = 0
+          let strAllTemp = document.querySelectorAll('.icon')
+          strAllTemp.forEach(temp => {
+            i++
+            document.querySelector(`.hour${i}`).innerText = data.hourly.getWeather[(i + now) % 24]
+          })
+          let strCurrentTime = document.querySelectorAll(".txtTime")
+          strCurrentTemp.forEach(inc => {
+            inc.innerText = `${strTemp}°F`
+          })
+          
+          document.querySelector("#txtHumidity").innerText = `Current Humidity: ${strHumidity}%`
+          document.querySelector("#txtTemp").innerText = `Current Temperature: ${strTemp}°F`
+
+          for (let i = 0; i <= 5; i++) {
+            const futureHour = (nowLocal + i) % 12 || 12 // Convert 24-hour to 12-hour format
+            document.querySelector(`#hour${i}`).innerText = futureHour
+            document.querySelector(`#hourTemp${i}`).innerText = `${strHourlyTemps[(nowLocal + i)]}°F`
+          }
+          for (let i = 0; i <= 5; i++) {
+            if (nowLocal + i <= 6 || nowLocal + i >= 18) {
+              if (strWC[nowUTC + i] == 1 || strWC[nowUTC + i] == 2) {
+                document.querySelector(`#icon${i}`).className = 'bi bi-cloud-moon'
+                document.querySelector('#txtCondition').innerText = `Current Conditions: Partially Cloudy`
+              } else {
+                document.querySelector(`#icon${i}`).className = 'bi bi-moon'
+                document.querySelector('#txtCondition').innerText = `Current Conditions: Fair`
+              }
+            } else {
+              if (strWC[nowUTC + i] == 1 || strWC[nowUTC + i] == 2) {
+                document.querySelector(`#icon${i}`).className = 'bi bi-cloud-sun'
+                document.querySelector('#txtCondition').innerText = `Current Conditions: Partially Cloudy`
+              } else {
+                document.querySelector(`#icon${i}`).className = 'bi bi-sun'
+                document.querySelector('#txtCondition').innerText = `Current Conditions: Fair`
+              }
+            }
+            if(strWC[nowUTC + i] == 61 || strWC[nowUTC + i] == 63 || strWC[nowUTC + i] == 65) {
+              document.querySelector(`#icon${i}`).className = 'bi bi-cloud-drizzle'
+              document.querySelector('#txtCondition').innerText = `Current Conditions: Rainy`
+            } else if (strWC[nowUTC + i] == 3) {
+              document.querySelector(`#icon${i}`).className = 'bi bi-cloud'
+              document.querySelector('#txtCondition').innerText = `Current Conditions: Overcast`
+            }
+          }
+        } catch (objError) {
+          console.error("Error fetching weather data:", objError)
+        }
+      }
+
+      window.onload = getUserLocation
+    </script>
+</body>
+</html>
